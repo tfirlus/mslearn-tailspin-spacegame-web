@@ -14,6 +14,8 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
+  wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
+  dotnetSdkVersion: '6.x'
 
 # Under the steps section, you see the build tasks that maps to each of the script commands that we identified earlier.
 #
@@ -28,10 +30,10 @@ variables:
 
 steps:
 - task: UseDotNet@2
-  displayName: 'Use .NET SDK 6.x'
+  displayName: 'Use .NET SDK $(dotnetSdkVersion)'
   inputs:
     packageType: sdk
-    version: '6.x'
+    version: '$(dotnetSdkVersion)'
 
 # # Install Node.js modules as defined in package.json.
 # npm install --quiet
@@ -42,7 +44,7 @@ steps:
 
 # # Compile Sass (.scss) files to standard CSS (.css).
 # node-sass Tailspin.SpaceGame.Web/wwwroot
-- script: './node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot'
+- script: './node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)'
   displayName: 'Compile Sass assets'
 
 # # Minify JavaScript and CSS files.
@@ -60,7 +62,7 @@ steps:
 # echo `date` > Tailspin.SpaceGame.Web/wwwroot/buildinfo.txt
 - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
   displayName: 'Write build info'
-  workingDirectory: Tailspin.SpaceGame.Web/wwwroot
+  workingDirectory: $(wwwrootDir)
 
 # # Install the latest .NET packages the app depends on.
 # dotnet restore
@@ -73,21 +75,21 @@ steps:
 # # Build the app under the Release configuration.
 # dotnet build --configuration Release
 - task: DotNetCoreCLI@2                 # dotnet command
-  displayName: 'Build the project - Release'
+  displayName: 'Build the project - $(buildConfiguration)'
   inputs:
     command: 'build'
-    arguments: '--no-restore --configuration Release'   # arguments specifies additional arguments to pass to the command
+    arguments: '--no-restore --configuration $(buildConfiguration)'   # arguments specifies additional arguments to pass to the command
     projects: '**/*.csproj'
 
 # # Publish the build to the /tmp directory.
 # dotnet publish --no-build --configuration Release --output /tmp/Release
 - task: DotNetCoreCLI@2                         # task uses the DotNetCoreCLI@2 task to publish, or package, the app's build results (including its dependencies) into a folder
-  displayName: 'Publish the project - Release'
+  displayName: 'Publish the project - $(buildConfiguration)'
   inputs:
     command: 'publish'
     projects: '**/*.csproj'
     publishWebProjects: false
-    arguments: '--no-build --configuration Release --output $(Build.ArtifactStagingDirectory)/Release'
+    arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
     zipAfterPublish: true                           # The zipAfterPublish argument specifies to add the built results to a .zip file
 
 - task: PublishBuildArtifacts@1                 # task uses the PublishBuildArtifacts@1 task to publish the .zip file to Azure Pipelines
