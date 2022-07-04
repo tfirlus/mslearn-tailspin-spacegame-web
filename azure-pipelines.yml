@@ -25,6 +25,7 @@ variables:
 # For example, there's no built-in task that runs the node-Sass utility, or writes build info to a text file.
 # To run general system commands, you use the CmdLine@2 or script task.
 # The pipeline uses the script task because it's a common shortcut for CmdLine@2.
+
 steps:
 - task: UseDotNet@2
   displayName: 'Use .NET SDK 6.x'
@@ -32,15 +33,21 @@ steps:
     packageType: sdk
     version: '6.x'
 
-- task: Npm@1
+# # Install Node.js modules as defined in package.json.
+# npm install --quiet
+- task: Npm@1                                   # -> npm install
   displayName: 'Run npm install'
   inputs:
     verbose: false
 
+# # Compile Sass (.scss) files to standard CSS (.css).
+# node-sass Tailspin.SpaceGame.Web/wwwroot
 - script: './node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot'
   displayName: 'Compile Sass assets'
 
-- task: gulp@1
+# # Minify JavaScript and CSS files.
+# gulp
+- task: gulp@1                                  # -> gulp
   displayName: 'Run gulp tasks'
 
 # $(Build.DefinitionName) specifies the name of the build pipeline. For example, "SpaceGame-Web-CI."
@@ -48,19 +55,26 @@ steps:
 # $(Build.BuildNumber) is name of the completed build. You can configure the format,
 #    but by default the build number includes the current date followed by the build number for that day.
 #    An example build number is "20190329.1."
+
+# # Print the date to wwwroot/buildinfo.txt.
+# echo `date` > Tailspin.SpaceGame.Web/wwwroot/buildinfo.txt
 - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
   displayName: 'Write build info'
   workingDirectory: Tailspin.SpaceGame.Web/wwwroot
 
-- task: DotNetCoreCLI@2
-  displayName: 'Restore project dependencies'
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
+# # Install the latest .NET packages the app depends on.
+# dotnet restore
+- task: DotNetCoreCLI@2                         # The DotNetCoreCLI@2 task maps to the dotnet command
+  displayName: 'Restore project dependencies'       # displayName defines the task name that's shown in the user interface
+  inputs:                                           # inputs defines arguments that are passed to the command
+    command: 'restore'                                  # command specifies to run the dotnet build subcommand
+    projects: '**/*.csproj'                             # projects specifies which projects to build
 
-- task: DotNetCoreCLI@2
+# # Build the app under the Release configuration.
+# dotnet build --configuration Release
+- task: DotNetCoreCLI@2                 # dotnet command
   displayName: 'Build the project - Release'
   inputs:
     command: 'build'
-    arguments: '--no-restore --configuration Release'
+    arguments: '--no-restore --configuration Release'   # arguments specifies additional arguments to pass to the command
     projects: '**/*.csproj'
