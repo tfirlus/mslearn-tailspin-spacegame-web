@@ -6,6 +6,7 @@
 trigger:
 - '*'
 
+# The demands section beneath pool specifies that you need npm, the Node.js package manager, installed on the build system.
 pool:
   vmImage: 'ubuntu-20.04'
   demands:
@@ -14,6 +15,16 @@ pool:
 variables:
   buildConfiguration: 'Release'
 
+# Under the steps section, you see the build tasks that maps to each of the script commands that we identified earlier.
+#
+# Azure Pipelines provides built-in build tasks that map to many common build activities.
+# For example, the DotNetCoreCLI@2 task maps to the dotnet command-line utility.
+# The pipeline uses DotNetCoreCLI@2 two times: one time to restore, or install, the project's dependencies, and one time to build the project.
+#
+# Remember that not all build activities map to a built-in task.
+# For example, there's no built-in task that runs the node-Sass utility, or writes build info to a text file.
+# To run general system commands, you use the CmdLine@2 or script task.
+# The pipeline uses the script task because it's a common shortcut for CmdLine@2.
 steps:
 - task: UseDotNet@2
   displayName: 'Use .NET SDK 6.x'
@@ -32,6 +43,11 @@ steps:
 - task: gulp@1
   displayName: 'Run gulp tasks'
 
+# $(Build.DefinitionName) specifies the name of the build pipeline. For example, "SpaceGame-Web-CI."
+# $(Build.BuildId) is a numeric identifier for the completed build, like 115.
+# $(Build.BuildNumber) is name of the completed build. You can configure the format,
+#    but by default the build number includes the current date followed by the build number for that day.
+#    An example build number is "20190329.1."
 - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
   displayName: 'Write build info'
   workingDirectory: Tailspin.SpaceGame.Web/wwwroot
