@@ -1,3 +1,8 @@
+# ASP.NET Core
+# Build and test ASP.NET Core projects targeting .NET Core.
+# Add steps that run tests, create a NuGet package, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
 trigger:
 - '*'
 
@@ -45,6 +50,7 @@ steps:
     arguments: '--no-restore --configuration $(buildConfiguration)'
     projects: '**/*.csproj'
 
+# Installs tools listed in the manifest file, dotnet-tools.json
 - task: DotNetCoreCLI@2
   displayName: 'Install .NET Core tools from local manifest'
   inputs:
@@ -52,6 +58,19 @@ steps:
     custom: tool
     arguments: 'restore'
 
+# Runs unit tests and also collects code coverage in Cobertura format
+#
+# dotnet test --no-build \
+#             --logger trx \
+#             --configuration Release \
+#             /p:CollectCoverage=true \
+#             /p:CoverletOutputFormat=cobertura \
+#             /p:CoverletOutput=./TestResults/Coverage/
+#
+# Notice that this task doesn't specify the --logger trx argument that you used when you ran the tests manually. 
+# The publishTestResults argument adds that for you.
+# This argument tells the pipeline to generate the TRX file to a temporary directory, accessible through the $(Agent.TempDirectory) built-in variable.
+# It also publishes the task results to the pipeline.
 - task: DotNetCoreCLI@2
   displayName: 'Run unit tests - $(buildConfiguration)'
   inputs:
@@ -60,6 +79,12 @@ steps:
     publishTestResults: true
     projects: '**/*.Tests.csproj'
 
+# Converts Cobertura output to HTML
+#
+# dotnet tool run reportgenerator \
+#  -reports:./Tailspin.SpaceGame.Web.Tests/TestResults/Coverage/coverage.cobertura.xml \
+#  -targetdir:./CodeCoverage \
+#  -reporttypes:HtmlInline_AzurePipelines
 - task: DotNetCoreCLI@2
   displayName: 'Create code coverage report'
   inputs:
@@ -67,6 +92,7 @@ steps:
     custom: tool
     arguments: 'run reportgenerator -reports:$(Build.SourcesDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/CodeCoverage -reporttypes:HtmlInline_AzurePipelines'
 
+# Publishes the report to the pipeline
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish code coverage report'
   inputs:
